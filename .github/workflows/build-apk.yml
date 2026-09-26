@@ -76,9 +76,12 @@ jobs:
           # node_modules，被依赖方必须先编译出 lib/types/**，消费方 tsc 才解析得到
           # 其类型（否则 TS2307 + TS2307 + TS7006）。被依赖的两个是 dsh-shell-termux
           # 与 plugins/dsh-android-bridge，二者必须排在 plugins/dsh-android-linux-env
-          # 之前。本顺序与权威表 scripts/plugin-dirs.json 的 dirs 一致（本地链
-          # scripts/build-apk-013.ps1 即按该表构建）。
-          for d in dsh-shell-termux plugins/dsh-android-bridge plugins/dsh-android-manage plugins/dsh-android-linux-env plugins/dsh-android-file-open plugins/dsh-model-capability dsh-client-ui-responsive; do
+          # 之前。本顺序与权威表 scripts/plugin-dirs.json 的 dirs 完全一致（本地链
+          # scripts/build-apk-013.ps1 即按该表构建）；该表唯一未列入此处的成员是
+          # dsh-host-web-compat——它用已提交的 lib，无需构建。
+          # 成员一个都不能少：check-contract.mjs 会断言 insert 行的包目录 lib/ 在场，
+          # 漏建即 CONTRACT FAIL（如 browser / vdisplay 曾因漏列而判红）。
+          for d in dsh-shell-termux dsh-client-ui-responsive plugins/dsh-android-bridge plugins/dsh-android-manage plugins/dsh-android-linux-env plugins/dsh-android-file-open plugins/dsh-model-capability plugins/dsh-android-browser plugins/dsh-android-vdisplay; do
             echo "== npm build $d =="
             install_deps "$d"
             (cd "$d" && npm run build)
