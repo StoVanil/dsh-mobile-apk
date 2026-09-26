@@ -72,7 +72,13 @@ jobs:
               (cd "$1" && npm install --no-audit --no-fund)
             fi
           }
-          for d in plugins/dsh-android-bridge plugins/dsh-android-manage plugins/dsh-android-linux-env plugins/dsh-android-file-open plugins/dsh-model-capability dsh-shell-termux dsh-client-ui-responsive; do
+          # 顺序即依赖序：file: 依赖在 npm 安装时以 junction/软链落进消费方的
+          # node_modules，被依赖方必须先编译出 lib/types/**，消费方 tsc 才解析得到
+          # 其类型（否则 TS2307 + TS2307 + TS7006）。被依赖的两个是 dsh-shell-termux
+          # 与 plugins/dsh-android-bridge，二者必须排在 plugins/dsh-android-linux-env
+          # 之前。本顺序与权威表 scripts/plugin-dirs.json 的 dirs 一致（本地链
+          # scripts/build-apk-013.ps1 即按该表构建）。
+          for d in dsh-shell-termux plugins/dsh-android-bridge plugins/dsh-android-manage plugins/dsh-android-linux-env plugins/dsh-android-file-open plugins/dsh-model-capability dsh-client-ui-responsive; do
             echo "== npm build $d =="
             install_deps "$d"
             (cd "$d" && npm run build)
