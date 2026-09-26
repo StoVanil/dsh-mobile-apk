@@ -313,10 +313,14 @@ for (const entry of OVERLAY.keepUnpublished ?? []) {
     }
   }
   log(`引擎树补丁就位（${enginePatches.length} 项 marker 在场）`)
-  // 行为回归（0.13.7）：G1/G2 这类补丁光有 marker 不足以证明「改完还能跑」——marker 只证文本被替换。
-  // 两个测试直接驱动刚打过补丁的产物（不联网、不花额度），缺目标文件时自行 skip（裸 clone 正常）。
+  // 行为回归（0.13.7）：补丁光有 marker 不足以证明「改完还能跑」——marker 只证文本被替换。
+  // 测试直接驱动刚打过补丁的产物（不联网、不花额度），缺目标文件时自行 skip（裸 clone 正常）。
+  // 0.14.2 追 0.1.7-rc.2：boot-pending-G1 已在追版时撤销（不在 registry.json，见
+  // docs/AGENTS/RUNTIME-PATCHES.md §G1 行），其行为回归项随之移除——上游 0.1.7-rc.2 的
+  // dsh-app-boot 已不再导出 assertEntriesActivated（0.1.5-rc.1 有、rc.2 为 0），
+  // 留着会 import 到 undefined 并在首个用例上抛 TypeError，把快照构建整条打死。
+  // boot 期容错真源已改为 boot-third-party-isolation-G3（下方单独断言）。
   for (const [label, script, flag, target] of [
-    ['boot-pending-G1', 'boot-pending.test.mjs', '--boot', join(stageRoot, 'usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js')],
     ['pi-toolcall-G2', 'pi-toolcall.test.mjs', '--pi-ai', join(stageRoot, 'usr/lib/node_modules/@deepseek-ai/dsh/node_modules/@earendil-works/pi-ai/dist/api/openai-completions.js')],
   ]) {
     const out = execSync(`node "${join(ROOT, 'scripts', 'tests', script)}" ${flag} "${target}"`, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
